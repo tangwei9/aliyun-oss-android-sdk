@@ -27,4 +27,6 @@
     <string name="batch_upload">batch</string>
     <string name="trigger_callback">callback</string>
     <string name="image_persist">image persist</string>
+    <string name="resume_download">下载</string>
+    <string name="cancel_download">取消下载</string>
 </resources>

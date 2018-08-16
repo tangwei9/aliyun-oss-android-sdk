@@ -39,6 +39,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import com.alibaba.sdk.android.oss.sample.download.DownloadListener;
+import com.alibaba.sdk.android.oss.sample.download.DownloadManager;
+import com.alibaba.sdk.android.oss.sample.download.DownloadNetwork;
 import com.tangxiaolv.telegramgallery.*;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.alibaba.sdk.android.oss.sample.BatchUploadSamples;
@@ -66,6 +69,8 @@ public class AuthTestActivity extends AppCompatActivity {
     private static final String FILE_PATH = FILE_DIR + "wangwang.zip";
     private MaterialDialog loadingDialog;
     private BatchUploadSamples batchUploadSamples;
+
+    private static final String resumableURL = "http://oss-attachment.cn-hangzhou.oss.aliyun-inc.com/oss-browser/1.7.1/oss-browser-darwin-x64.zip";  //简单起见,这里使用了公共读权限的url，用户也可以使用sdk的presignConstrainedObjectURL来获取自定义的url
 
     private Handler handler = new Handler(new Handler.Callback() {
         @Override
@@ -394,6 +399,7 @@ public class AuthTestActivity extends AppCompatActivity {
         copyLocalFile();
         initLocalFiles();
         initDialog();
+        initDownloadTask();
     }
 
     @Override
@@ -602,4 +608,49 @@ public class AuthTestActivity extends AppCompatActivity {
         }
     }
 
+    private void initDownloadTask() {
+        final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
+
+        DownloadManager downloadManager = DownloadManager.sharedManager();
+        downloadManager.addTask(resumableURL, new DownloadListener() {
+            @Override
+            public void onProgress(float progress) {
+                progressBar.setProgress((int) (progress * 100));
+            }
+
+            @Override
+            public void onFinished() {
+                Toast.makeText(AuthTestActivity.this, "下载完成!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onPause() {
+                Toast.makeText(AuthTestActivity.this, "暂停了!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onCancel() {
+                Toast.makeText(AuthTestActivity.this, "下载已取消!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void resumeDownloadClicked(View v) {
+        Log.d("AuthTestActivity", "resumeDownloadClicked: ");
+
+        DownloadManager downloadManager = DownloadManager.sharedManager();
+        if (!downloadManager.isDownloading(resumableURL)) {
+            ((Button)v).setText("暂停");
+            DownloadManager.sharedManager().download(resumableURL);
+        } else {
+            ((Button)v).setText("继续下载");
+            downloadManager.pause(resumableURL);
+        }
+    }
+
+    public void cancelDownloadClicked(View v) {
+        Log.d("AuthTestActivity", "cancelDownloadClicked: ");
+        DownloadManager downloadManager = DownloadManager.sharedManager();
+        DownloadManager.sharedManager().cancel(resumableURL);
+    }
 }
